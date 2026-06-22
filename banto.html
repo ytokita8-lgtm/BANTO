@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Banto 設計確認リスト</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Banto設計">
+<meta name="theme-color" content="#1B5E20">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo UI',sans-serif;font-size:13px;background:#f0f2f5;color:#1a1a1a}
+.app{display:flex;height:100vh}
+/* Sidebar */
+.sidebar{width:210px;min-width:210px;background:#1B5E20;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-hd{padding:14px 12px 10px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-hd h1{font-size:14px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px}
+.sidebar-hd p{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px}
+.sync-dot{display:inline-flex;align-items:center;gap:4px;font-size:9px;margin-top:5px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7)}
+.sync-dot.ok{background:rgba(56,182,120,0.2);color:#9FE1CB}
+.sync-dot.err{background:rgba(220,80,80,0.2);color:#F09595}
+.proj-list{flex:1;overflow-y:auto;padding:6px}
+.proj-item{padding:8px 10px;border-radius:6px;cursor:pointer;margin-bottom:2px}
+.proj-item:hover{background:rgba(255,255,255,0.08)}
+.proj-item.active{background:rgba(255,255,255,0.18)}
+.proj-name{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px}
+.pbar{height:3px;background:rgba(255,255,255,0.15);border-radius:2px;margin-top:4px}
+.pbar-fill{height:100%;background:#4CAF50;border-radius:2px}
+.drag-row{display:flex;align-items:center;gap:5px}
+.drag-handle{color:rgba(255,255,255,0.3);font-size:13px;cursor:grab;flex-shrink:0}
+.sidebar-footer{padding:8px;display:flex;flex-direction:column;gap:5px}
+.btn-new{width:100%;padding:8px;border:1px dashed rgba(255,255,255,0.3);border-radius:6px;background:none;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:5px;justify-content:center}
+.btn-new:hover{background:rgba(255,255,255,0.1);color:#fff}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid #e8e8e8;padding:0 16px;display:flex;align-items:center;gap:8px;height:48px;flex-shrink:0}
+.proj-title{font-size:14px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:1px;background:#f0f0f0;padding:3px;border-radius:6px}
+.tab{padding:4px 12px;border-radius:4px;font-size:11px;cursor:pointer;color:#666;border:none;background:none;font-weight:600;white-space:nowrap}
+.tab.active{background:#fff;color:#1B5E20;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
+.btn-save{padding:5px 12px;background:none;border:1px solid #ddd;border-radius:6px;font-size:11px;cursor:pointer;color:#666;display:flex;align-items:center;gap:3px}
+.btn-save:hover{border-color:#1B5E20;color:#1B5E20}
+.btn-del{padding:5px 9px;background:none;border:1px solid #eee;border-radius:6px;font-size:13px;cursor:pointer;color:#ccc}
+.btn-del:hover{border-color:#E24B4A;color:#E24B4A}
+.content{flex:1;overflow-y:auto;padding:14px;background:#f0f2f5}
+/* Cards */
+.card{background:#fff;border-radius:8px;border:1px solid #e8e8e8;margin-bottom:10px;overflow:hidden}
+.card-hd{padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e8e8e8;font-size:11px;font-weight:700;color:#555;display:flex;align-items:center;gap:5px}
+.card-body{padding:12px}
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.stat{background:#fff;border-radius:8px;padding:10px 8px;text-align:center;border:1px solid #e8e8e8}
+.stat-n{font-size:18px;font-weight:700}
+.stat-l{font-size:9px;color:#888;margin-top:2px}
+/* Info */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.info-f{padding:7px 10px;border:1px solid #e8e8e8;border-radius:6px}
+.info-f label{font-size:10px;color:#888;font-weight:700;display:block;margin-bottom:2px}
+.info-f input,.info-f select,.info-f textarea{width:100%;border:none;outline:none;font-size:12px;color:#1a1a1a;background:none;font-family:inherit}
+/* Checklist */
+.chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:8px}
+.chk-row{display:flex;align-items:flex-start;gap:7px;padding:6px 8px;border-radius:6px;border:1px solid #e8e8e8;background:#fff;cursor:pointer;user-select:none}
+.chk-row:active{background:#f0f4ff}
+.chk-dot{width:22px;height:22px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;margin-top:1px}
+.chk-dot.progress{background:#FF8C00;border-color:#FF8C00;color:#fff;font-size:13px}
+.chk-dot.done{background:#1B5E20;border-color:#1B5E20;color:#fff}
+.chk-dot.na{background:#888;border-color:#888;color:#fff}
+.chk-label{font-size:11px;color:#1a1a1a;flex:1;line-height:1.4}
+.note-btn{background:none;border:none;cursor:pointer;color:#ddd;font-size:13px;padding:2px;flex-shrink:0}
+.note-btn:hover{color:#1B5E20}
+.tag{font-size:9px;padding:1px 4px;border-radius:4px;margin-left:3px;vertical-align:middle;font-weight:700}
+.sec-hd{padding:8px 12px;border-radius:6px;font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px;margin:10px 0 5px;cursor:default}
+.sec-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,0.2);color:#fff;font-weight:700}
+/* Legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#888;margin-bottom:10px;align-items:center}
+.legend span{display:flex;align-items:center;gap:3px}
+/* Meta inputs */
+.meta-row{display:flex;gap:4px;margin-top:3px;align-items:center;flex-wrap:wrap}
+.meta-inp{border:none;border-bottom:1px solid #e0e0e0;outline:none;font-size:9px;color:#555;background:none;padding:1px 3px}
+.meta-inp:focus{border-bottom-color:#1B5E20}
+/* Note display */
+.note-display{font-size:10px;color:#C0392B;font-weight:700;margin-top:3px;padding:3px 6px;background:#FFF5F5;border-radius:4px;border-left:3px solid #E24B4A;display:flex;align-items:flex-start;gap:4px}
+/* Alert */
+.alert{padding:8px 12px;border-radius:6px;margin-bottom:6px;font-size:11px;display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;background:#FFF8E6;color:#9A6700;border:1px solid #F0C040}
+/* Modal */
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:500}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:10px;width:340px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.modal-hd{padding:12px 14px;border-bottom:1px solid #e8e8e8;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.modal-hd h3{font-size:14px;font-weight:700}
+.modal-x{background:none;border:none;cursor:pointer;font-size:16px;color:#aaa}
+.modal-body{padding:14px}
+.form-row{margin-bottom:10px}
+.form-row label{font-size:11px;color:#666;font-weight:700;display:block;margin-bottom:3px}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;outline:none;font-family:inherit}
+.btn-pri{padding:8px 16px;background:#1B5E20;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:700}
+.btn-sec{padding:8px 16px;background:none;color:#666;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer}
+.btn-danger{padding:8px 16px;background:none;color:#B00020;border:1px solid #E24B4A;border-radius:6px;font-size:12px;cursor:pointer}
+/* Undo */
+.undo-bar{position:fixed;bottom:20px;right:20px;z-index:300;display:none;flex-direction:column;gap:6px}
+.undo-btn{width:40px;height:40px;border-radius:50%;background:#1B5E20;color:#fff;border:none;cursor:pointer;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center}
+.undo-btn:disabled{opacity:0.3;cursor:not-allowed}
+/* Toast */
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.ok{background:#1B5E20;color:#fff}
+.toast.err{background:#B00020;color:#fff}
+/* Loading */
+.loading{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:10px}
+/* Mobile */
+.mob-hd{display:none;background:#1B5E20;padding:10px 14px;align-items:center;gap:8px;position:sticky;top:0;z-index:100}
+.mob-menu{background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+.mob-title{font-size:13px;font-weight:700;color:#fff;flex:1}
+.mob-tabs{display:none;background:#fff;border-bottom:1px solid #e8e8e8;padding:5px 10px;gap:4px;overflow-x:auto;scrollbar-width:none}
+.mob-tabs::-webkit-scrollbar{display:none}
+.mob-tab{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;color:#666;border:1px solid #ddd;background:#fff;white-space:nowrap;font-weight:600;flex-shrink:0}
+.mob-tab.active{background:#1B5E20;color:#fff;border-color:#1B5E20}
+.drawer-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:200;display:none}
+.drawer-bg.show{display:block}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:260px;background:#1B5E20;z-index:201;transform:translateX(-100%);transition:transform .25s;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-hd{padding:14px 12px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:space-between}
+.drawer-hd h2{font-size:14px;font-weight:700;color:#fff}
+.drawer-x{background:none;border:none;color:rgba(255,255,255,0.6);font-size:18px;cursor:pointer}
+.drawer-list{flex:1;overflow-y:auto;padding:6px}
+.drawer-item{padding:10px 12px;border-radius:6px;cursor:pointer;margin-bottom:2px}
+.drawer-item:hover,.drawer-item:active{background:rgba(255,255,255,0.08)}
+.drawer-item.active{background:rgba(255,255,255,0.18)}
+.drawer-name{font-size:13px;font-weight:700;color:#fff}
+.drawer-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px}
+.drawer-footer{padding:8px}
+@media(max-width:640px){
+  .app{flex-direction:column}
+  .sidebar{display:none}
+  .main{flex:1}
+  .topbar{display:none}
+  .mob-hd{display:flex}
+  .mob-tabs{display:flex}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .info-grid{grid-template-columns:1fr}
+  .chk-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="loading" id="loading"><i class="ti ti-pencil-ruler" style="font-size:40px;color:#1B5E20"></i><p>読み込み中...</p></div>
+<div class="toast" id="toast"></div>
+<div class="undo-bar" id="undoBar">
+  <button class="undo-btn" id="undoBtn" onclick="undo()" disabled title="元に戻す Ctrl+Z"><i class="ti ti-arrow-back-up"></i></button>
+  <button class="undo-btn" id="redoBtn" onclick="redo()" disabled title="やり直し Ctrl+Y"><i class="ti ti-arrow-forward-up"></i></button>
+</div>
+
+<div class="app" id="app" style="opacity:0;transition:opacity .3s">
+  <div class="sidebar">
+    <div class="sidebar-hd">
+      <h1><i class="ti ti-pencil-ruler"></i> Banto設計</h1>
+      <p>設計確認リストシステム</p>
+      <span class="sync-dot ok" id="syncDot"><i class="ti ti-cloud-check"></i> 保存済み</span>
+    </div>
+    <div class="proj-list" id="projListPC"></div>
+    <div class="sidebar-footer">
+      <button class="btn-new" onclick="openNewProj()"><i class="ti ti-plus"></i> 新規案件を追加</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar" id="pcTopbar" style="display:none">
+      <span class="proj-title" id="pcTitle">-</span>
+      <div class="tabs" id="pcTabs">
+        <button class="tab active" onclick="setTab('overview')">概要</button>
+        <button class="tab" onclick="setTab('legal')">法規・敷地</button>
+        <button class="tab" onclick="setTab('design')">設計チェック</button>
+        <button class="tab" onclick="setTab('drawing')">図面作成</button>
+      </div>
+      <button class="btn-save" onclick="saveNow()"><i class="ti ti-device-floppy"></i> 保存</button>
+      <button class="btn-del" onclick="confirmDel()"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="mob-hd">
+      <button class="mob-menu" onclick="openDrawer()"><i class="ti ti-menu-2"></i></button>
+      <span class="mob-title" id="mobTitle">案件を選択</span>
+    </div>
+    <div class="mob-tabs" id="mobTabs" style="display:none">
+      <button class="mob-tab active" onclick="setTab('overview')">概要</button>
+      <button class="mob-tab" onclick="setTab('legal')">法規・敷地</button>
+      <button class="mob-tab" onclick="setTab('design')">設計チェック</button>
+      <button class="mob-tab" onclick="setTab('drawing')">図面作成</button>
+    </div>
+    <div class="content" id="content">
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:10px;color:#aaa">
+        <i class="ti ti-pencil-ruler" style="font-size:48px;color:#1B5E20;opacity:0.4"></i>
+        <span style="font-size:14px">案件を選択するか新規追加してください</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer -->
+<div class="drawer-bg" id="drawerBg" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-hd">
+    <h2><i class="ti ti-pencil-ruler"></i> Banto設計</h2>
+    <button class="drawer-x" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="drawer-list" id="drawerList"></div>
+  <div class="drawer-footer">
+    <button class="btn-new" onclick="closeDrawer();openNewProj()"><i class="ti ti-plus"></i> 新規案件を追加</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-hd"><h3 id="modalTitle">-</h3><button class="modal-x" onclick="closeModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const SUPA_URL='https://jbtqoipdsfebbfuwsktv.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidHFvaXBkc2ZlYmJmdXdza3R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MjI2NzksImV4cCI6MjA5NjM5ODY3OX0.zXqrr_nu2uRnnYz-vFG3rpWVwGveDFhTPyWX7aiTXS8';
+const H={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+const TABLE='banto_projects';
+const dbGet=async(q='')=>{const r=await fetch(`${SUPA_URL}/rest/v1/${TABLE}?${q}&order=sort_order.asc,created_at.asc`,{headers:{...H,'Accept':'application/json'}});if(!r.ok)throw new Error(await r.text());return r.json();};
+const dbPost=async(d)=>{const r=await fetch(`${SUPA_URL}/rest/v1/${TABLE}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json();};
+const dbPatch=async(id,d)=>{const r=await fetch(`${SUPA_URL}/rest/v1/${TABLE}?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json();};
+const dbDelete=async(id)=>{const r=await fetch(`${SUPA_URL}/rest/v1/${TABLE}?id=eq.${id}`,{method:'DELETE',headers:H});if(!r.ok)throw new Error(await r.text());};
+
+// ── CHECKS DATA ──
+const CHECKS={
+  legal:[
+    // 基本情報・依頼
+    {id:'b_rafu',label:'ラフ図もらう（藤橋・関根）'},
+    {id:'b_yoto',label:'用途地域確認'},
+    {id:'b_yoto_other',label:'用途地域（その他）確認'},
+    {id:'b_kita',label:'北側斜線確認'},
+    {id:'b_kodo',label:'高度地区確認'},
+    {id:'b_bouka',label:'防火地域確認'},
+    {id:'b_road_sha',label:'道路斜線確認'},
+    {id:'b_road_42',label:'道路確認（42条1項・2項）'},
+    {id:'b_level',label:'現場レベルもらう ※早めに'},
+    {id:'b_genba',label:'現場確認'},
+    {id:'b_kotei',label:'高低差確認'},
+    {id:'b_gake',label:'崖条例確認'},
+    {id:'b_kaihatu',label:'開発確認'},
+    {id:'b_takuzo',label:'宅造確認'},
+    {id:'b_haiichi_zu',label:'配置図作図（レベル入れる）'},
+    {id:'b_fuka_kiso',label:'深基礎検討'},
+    {id:'b_kakutei',label:'確定測量'},
+    {id:'b_haichi_level',label:'配置レベル'},
+    {id:'b_gl',label:'設計GL（KBM〜GL）'},
+    {id:'b_kosho',label:'消防事前協議'},
+  ],
+  design:[
+    // 仕様・基本確認
+    {id:'b_shiyo',label:'仕様確認（仕上表確認）'},
+    {id:'b_shorei',label:'省令準耐火確認'},
+    {id:'b_habaki',label:'巾木有無確認'},
+    {id:'b_tenjo',label:'天井高さ確認'},
+    // 申請・計算
+    {id:'b_kakunin',label:'確認申請'},
+    {id:'b_shoene',label:'省エネ'},
+    {id:'b_choki',label:'長期優良'},
+    {id:'b_seino',label:'性能評価'},
+    {id:'b_kozo_kyoyo',label:'構造計算（許容応力度計算）'},
+    {id:'b_hekiyo',label:'壁量計算'},
+    {id:'b_wall_stud',label:'ウォールスタッド確認'},
+    {id:'b_kanki_irai',label:'換気依頼（スミカ→マーベックス）'},
+    // 図面確認
+    {id:'b_heimen_ritsu',label:'平面図・立面図まず確認'},
+    {id:'b_haiichi',label:'配置図確認'},
+    {id:'b_hashira',label:'柱配置と耐力面材位置検討'},
+    {id:'b_kankisen',label:'換気扇出し口（配置図と検討）'},
+    {id:'b_renji',label:'レンジフード出し口確認'},
+    {id:'b_eco',label:'エコキュート位置確認'},
+    {id:'b_shitsugai',label:'室外機位置確認'},
+    {id:'b_gabu_suido',label:'外部水道位置確認'},
+    {id:'b_kozo_irai',label:'構造依頼'},
+    {id:'b_saiko',label:'採光確認'},
+    {id:'b_sashi_size',label:'サッシサイズチェック'},
+    {id:'b_kanki_keisan',label:'換気計算'},
+    {id:'b_yukashita_ten',label:'床下点検口確認'},
+    {id:'b_tenjo_ten',label:'天井点検口確認'},
+    {id:'b_yukashita_kanki',label:'床下換気の位置ずれていないか'},
+    {id:'b_kado_tana',label:'可動棚の枚数と奥行確認'},
+    {id:'b_toi',label:'雨トイ位置確認'},
+    {id:'b_ame_keisan',label:'雨量計算'},
+    {id:'b_yane_koba',label:'屋根の勾配確認'},
+    // 構造
+    {id:'b_anchor',label:'アンカー位置確認'},
+    {id:'b_hd',label:'HD位置確認'},
+    {id:'b_suji',label:'筋交い確認'},
+    {id:'b_tairyoku',label:'耐力壁確認'},
+    {id:'b_tachiagari',label:'立上り確認'},
+    {id:'b_jitsu',label:'人通口確認'},
+    {id:'b_chi_tairyoku',label:'設計地耐力確認'},
+    {id:'b_chiban',label:'地盤調査（構造計算時必要）'},
+    {id:'b_koyadara',label:'小屋裏通気確認'},
+    {id:'b_koya_keikaku',label:'小屋裏計画確認'},
+    // 設備
+    {id:'b_tategu',label:'建具表（玄関ドア・サッシ）開口リスト'},
+    {id:'b_ryosui',label:'量水器（メーター）位置確認'},
+    {id:'b_denki',label:'電気設備（電力引込予定線）確認'},
+    {id:'b_bundenban',label:'分電盤位置確認'},
+    {id:'b_kakunin_kikan',label:'確認申請機関：秋田県建築住宅センター'},
+  ],
+  drawing:[
+    // 意匠図
+    {id:'b_annai',label:'案内図（気分転換）'},
+    {id:'b_haiichi_zu2',label:'配置図'},
+    {id:'b_shiagehyo',label:'仕上表'},
+    {id:'b_shikichi',label:'敷地求積図'},
+    {id:'b_mensekihyo',label:'面積表'},
+    {id:'b_heimen1',label:'平面図（1F）'},
+    {id:'b_heimen2',label:'平面図（2F）'},
+    {id:'b_heimen3',label:'平面図（3F）'},
+    {id:'b_ritsumen',label:'立面図'},
+    {id:'b_danmen',label:'断面図'},
+    {id:'b_kukei',label:'矩計図'},
+    {id:'b_tategu_hyo',label:'建具表'},
+    {id:'b_denki_zu',label:'電気図'},
+    {id:'b_kyuhaisu',label:'給排水図'},
+    {id:'b_hikage',label:'日影図'},
+    {id:'b_hyojun',label:'標準図（耐火リスト）'},
+    // 構造図
+    {id:'b_kozo_zu',label:'構造図'},
+    {id:'b_hekiyo_zu',label:'壁量計算（図面）'},
+    {id:'b_chiban_report',label:'地盤調査報告書'},
+    // 納期・進捗
+    {id:'b_納期',label:'納期確認'},
+    {id:'b_chaku',label:'着工日確認'},
+    {id:'b_tatekata',label:'建て方完工日確認'},
+    {id:'b_kanko',label:'完工日確認'},
+  ]
+};
+
+const SEC_NAME={legal:'法規・敷地確認',design:'設計チェック',drawing:'図面作成'};
+const SEC_ICON={legal:'ti-gavel',design:'ti-pencil-ruler',drawing:'ti-file-description'};
+const SEC_COLORS={legal:'#1B5E20',design:'#2E7D32',drawing:'#388E3C'};
+const SEC_BG={legal:'#1B5E20',design:'#1565C0',drawing:'#4A148C'};
+
+// ── STATE ──
+let projects=[],curProj=null,curTab='overview';
+let autoSaveTimer=null,saving=false;
+let undoStack=[],redoStack=[];
+let _dragProjId=null;
+
+// ── UTILS ──
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const toast=(msg,type='ok')=>{const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;setTimeout(()=>t.classList.remove('show'),2500);};
+const setSyncStatus=s=>{const e=document.getElementById('syncDot');if(!e)return;e.className='sync-dot '+(s==='ok'?'ok':s==='err'?'err':'');e.innerHTML=s==='ok'?'<i class="ti ti-cloud-check"></i> 保存済み':s==='err'?'<i class="ti ti-cloud-off"></i> 保存エラー':'<i class="ti ti-loader"></i> 保存中...';};
+
+// ── DB ──
+const loadProjects=async()=>{
+  try{
+    const data=await dbGet('select=*');
+    projects=data.map(r=>({
+      id:r.id,name:r.name||'',client:r.client||'',client_kana:r.client_kana||'',
+      tel:r.tel||'',address:r.address||'',type:r.type||'木造2階',
+      staff:r.staff||'',tantou:r.tantou||'',
+      start:r.start_date||'',tatekata:r.tatekata_date||'',kanko:r.kanko_date||'',
+      memo:r.memo||'',
+      checks:r.checks||{},notes:r.notes||{},
+      checksMeta:r.checks_meta||{},
+      sort_order:r.sort_order||0,_saved:true
+    }));
+    setSyncStatus('ok');
+  }catch(e){
+    // Table might not exist yet
+    if(e.message&&e.message.includes('relation')){
+      projects=[];
+      toast('Supabaseにテーブルを作成してください','err');
+    } else {
+      setSyncStatus('err');
+    }
+  }
+};
+
+const saveProj=async()=>{
+  if(!curProj||saving)return;
+  saving=true;setSyncStatus('');
+  try{
+    const d={
+      id:curProj.id,name:curProj.name,client:curProj.client,
+      client_kana:curProj.client_kana,tel:curProj.tel,address:curProj.address,
+      type:curProj.type,staff:curProj.staff,tantou:curProj.tantou,
+      start_date:curProj.start||'',tatekata_date:curProj.tatekata||'',
+      kanko_date:curProj.kanko||'',memo:curProj.memo||'',
+      checks:curProj.checks,notes:curProj.notes,
+      checks_meta:curProj.checksMeta||{},
+      sort_order:curProj.sort_order||0,
+      updated_at:new Date().toISOString()
+    };
+    if(curProj._saved){await dbPatch(curProj.id,d);}
+    else{d.created_at=new Date().toISOString();await dbPost(d);curProj._saved=true;}
+    setSyncStatus('ok');toast('保存しました ✓');
+  }catch(e){setSyncStatus('err');toast('保存失敗: '+e.message,'err');}
+  saving=false;
+};
+
+const saveNow=()=>saveProj();
+const autoSave=()=>{if(autoSaveTimer)clearTimeout(autoSaveTimer);setSyncStatus('');autoSaveTimer=setTimeout(saveProj,3000);};
+
+// ── UNDO ──
+const saveHistory=()=>{
+  if(!curProj)return;
+  undoStack.push({
+    checks:JSON.parse(JSON.stringify(curProj.checks)),
+    notes:JSON.parse(JSON.stringify(curProj.notes)),
+    checksMeta:JSON.parse(JSON.stringify(curProj.checksMeta||{})),
+    name:curProj.name,client:curProj.client,client_kana:curProj.client_kana,
+    tel:curProj.tel,address:curProj.address,memo:curProj.memo
+  });
+  if(undoStack.length>30)undoStack.shift();
+  redoStack=[];updateUndoBtns();
+};
+const updateUndoBtns=()=>{
+  const u=document.getElementById('undoBtn');const r=document.getElementById('redoBtn');
+  if(u)u.disabled=undoStack.length===0;if(r)r.disabled=redoStack.length===0;
+};
+const applySnap=(snap)=>{
+  if(!curProj||!snap)return;
+  Object.assign(curProj,snap);renderContent();renderSidebar();autoSave();
+};
+const undo=()=>{if(!curProj||!undoStack.length)return;const c=JSON.parse(JSON.stringify({checks:curProj.checks,notes:curProj.notes,checksMeta:curProj.checksMeta||{},name:curProj.name,client:curProj.client,client_kana:curProj.client_kana,tel:curProj.tel,address:curProj.address,memo:curProj.memo}));redoStack.push(c);applySnap(undoStack.pop());updateUndoBtns();toast('元に戻しました');};
+const redo=()=>{if(!curProj||!redoStack.length)return;const c=JSON.parse(JSON.stringify({checks:curProj.checks,notes:curProj.notes,checksMeta:curProj.checksMeta||{},name:curProj.name,client:curProj.client,client_kana:curProj.client_kana,tel:curProj.tel,address:curProj.address,memo:curProj.memo}));undoStack.push(c);applySnap(redoStack.pop());updateUndoBtns();toast('やり直しました');};
+
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea,select'))return;
+  if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();}
+  if(e.ctrlKey&&e.key==='y'){e.preventDefault();redo();}
+});
+
+// ── RENDER ──
+const renderSidebar=()=>{
+  const allIds=Object.values(CHECKS).flat().map(c=>c.id);
+  const html=projects.map((p,i)=>{
+    const done=allIds.filter(id=>p.checks[id]==='done').length;
+    const pct=Math.round(done/allIds.length*100);
+    const act=curProj&&curProj.id===p.id;
+    return`<div class="proj-item${act?' active':''}" id="pi_${p.id}"
+      draggable="true"
+      ondragstart="onProjDS(event,'${p.id}')"
+      ondragover="onProjDO(event,'${p.id}')"
+      ondragleave="onProjDL(event,'${p.id}')"
+      ondrop="onProjDrop(event,'${p.id}')"
+      ondragend="onProjDE()"
+      onclick="selProj('${p.id}')">
+      <div class="drag-row">
+        <span class="drag-handle">⠿</span>
+        <div style="flex:1;min-width:0">
+          <div class="proj-name">${esc(p.name||'名称未設定')}</div>
+          <div class="proj-sub">${esc(p.client||'お施主様未設定')}</div>
+          <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('')||'<div style="padding:12px;font-size:11px;color:rgba(255,255,255,0.4);text-align:center">案件がありません</div>';
+  const el=document.getElementById('projListPC');if(el)el.innerHTML=html;
+  // Drawer
+  const dl=document.getElementById('drawerList');
+  if(dl)dl.innerHTML=projects.map(p=>{
+    const done=allIds.filter(id=>p.checks[id]==='done').length;
+    const pct=Math.round(done/allIds.length*100);
+    const act=curProj&&curProj.id===p.id;
+    return`<div class="drawer-item${act?' active':''}" onclick="selProj('${p.id}');closeDrawer()">
+      <div class="drawer-name">${esc(p.name||'名称未設定')}</div>
+      <div class="drawer-sub">${esc(p.client||'お施主様未設定')}</div>
+      <div class="pbar" style="margin-top:4px"><div class="pbar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('')||'<div style="padding:12px;font-size:12px;color:rgba(255,255,255,0.4);text-align:center">案件がありません</div>';
+};
+
+const selProj=id=>{
+  curProj=projects.find(p=>p.id===id);if(!curProj)return;
+  curTab='overview';
+  document.getElementById('pcTopbar').style.display='flex';
+  document.getElementById('pcTitle').textContent=curProj.name||'名称未設定';
+  document.getElementById('mobTitle').textContent=curProj.name||'名称未設定';
+  document.getElementById('mobTabs').style.display='flex';
+  document.getElementById('undoBar').style.display='flex';
+  setTabActive('overview');renderContent();renderSidebar();
+  undoStack=[];redoStack=[];updateUndoBtns();
+};
+
+const setTab=tab=>{curTab=tab;setTabActive(tab);renderContent();};
+const setTabActive=tab=>{
+  const map={overview:0,legal:1,design:2,drawing:3};
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===map[tab]));
+  document.querySelectorAll('.mob-tab').forEach((t,i)=>t.classList.toggle('active',i===map[tab]));
+};
+
+const renderContent=()=>{
+  const c=document.getElementById('content');if(!c||!curProj)return;
+  if(curTab==='overview')c.innerHTML=renderOverview();
+  else c.innerHTML=renderChecks(curTab==='legal'?['legal']:curTab==='design'?['design']:['drawing']);
+};
+
+// ── OVERVIEW ──
+const renderOverview=()=>{
+  const p=curProj;
+  const all=Object.values(CHECKS).flat();
+  const done=all.filter(c=>p.checks[c.id]==='done').length;
+  const prog=all.filter(c=>p.checks[c.id]==='progress').length;
+  const na=all.filter(c=>p.checks[c.id]==='na').length;
+  const pct=Math.round(done/all.length*100);
+  return`
+  <div class="stats">
+    <div class="stat"><div class="stat-n" style="color:#1B5E20">${pct}%</div><div class="stat-l">完了率</div></div>
+    <div class="stat"><div class="stat-n" style="color:#1B5E20">${done}</div><div class="stat-l">✓ 完了</div></div>
+    <div class="stat"><div class="stat-n" style="color:#FF8C00">${prog}</div><div class="stat-l">○ 進行中</div></div>
+    <div class="stat"><div class="stat-n" style="color:#888">${all.length-done-prog-na}</div><div class="stat-l">未対応</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><i class="ti ti-info-circle"></i> 案件基本情報</div>
+    <div class="card-body">
+      <div class="info-grid">
+        <div class="info-f"><label>案件名</label><input value="${esc(p.name)}" onchange="upd('name',this.value)" placeholder="例: ○○邸新築工事"/></div>
+        <div class="info-f"><label>建設地</label>
+          <div style="display:flex;align-items:center;gap:5px">
+            <input style="flex:1;border:none;outline:none;font-size:12px;background:none" value="${esc(p.address)}" onchange="upd('address',this.value)" placeholder="住所またはGoogleマップURL"/>
+            <a href="${p.address&&p.address.startsWith('http')?esc(p.address):'https://www.google.com/maps/search/'+encodeURIComponent(p.address||'')}" target="_blank" style="background:#4285F4;color:#fff;border-radius:5px;padding:3px 7px;font-size:10px;font-weight:700;text-decoration:none;flex-shrink:0;${p.address?'':'opacity:0.4;pointer-events:none'}"><i class="ti ti-map-pin"></i> 地図</a>
+          </div>
+        </div>
+        <div class="info-f"><label>お施主様 氏名</label><input value="${esc(p.client)}" onchange="upd('client',this.value)" placeholder="山田 太郎"/></div>
+        <div class="info-f"><label>お施主様 ふりがな</label><input value="${esc(p.client_kana)}" onchange="upd('client_kana',this.value)" placeholder="やまだ たろう"/></div>
+        <div class="info-f"><label>お施主様 連絡先</label><input value="${esc(p.tel)}" onchange="upd('tel',this.value)" placeholder="090-0000-0000"/></div>
+        <div class="info-f"><label>工事種別</label><select onchange="upd('type',this.value)">${['木造2階','木造3階','RC造','鉄骨造','リフォーム'].map(t=>`<option${p.type===t?' selected':''}>${t}</option>`).join('')}</select></div>
+        <div class="info-f"><label>担当者</label><input value="${esc(p.tantou)}" onchange="upd('tantou',this.value)" placeholder="担当者名"/></div>
+        <div class="info-f"><label>着工日</label><input type="date" value="${p.start}" onchange="upd('start',this.value)"/></div>
+        <div class="info-f"><label>建て方完工日</label><input type="date" value="${p.tatekata}" onchange="upd('tatekata',this.value)"/></div>
+        <div class="info-f"><label>完工日</label><input type="date" value="${p.kanko}" onchange="upd('kanko',this.value)"/></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><i class="ti ti-notes"></i> メモ・備考</div>
+    <div class="card-body"><textarea style="width:100%;border:none;outline:none;font-size:12px;resize:vertical;height:80px;font-family:inherit" onchange="upd('memo',this.value)" placeholder="メモを入力...">${esc(p.memo||'')}</textarea></div>
+  </div>`;
+};
+
+// ── CHECKLIST ──
+const renderChecks=secs=>{
+  const p=curProj;
+  return`<div class="legend">
+    <span><span style="width:18px;height:18px;border-radius:50%;border:2px solid #ccc;display:inline-block"></span>未対応</span>
+    <span><span style="width:18px;height:18px;border-radius:50%;background:#FF8C00;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700">○</span>進行中</span>
+    <span><span style="width:18px;height:18px;border-radius:50%;background:#1B5E20;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:9px">✓</span>完了</span>
+    <span><span style="width:18px;height:18px;border-radius:50%;background:#888;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:10px">－</span>該当なし</span>
+    <span style="color:#bbb">※タップで切替</span>
+  </div>
+  ${secs.map(sec=>{
+    const items=CHECKS[sec];
+    const done=items.filter(c=>p.checks[c.id]==='done').length;
+    const prog=items.filter(c=>p.checks[c.id]==='progress').length;
+    const cls=done===items.length?'badge-ok':(done+prog)>0?'badge-mid':'badge-ng';
+    return`<div class="sec-hd" style="background:${SEC_BG[sec]||'#1B5E20'}">
+      <i class="ti ${SEC_ICON[sec]}"></i>${SEC_NAME[sec]}
+      <span class="sec-badge">${done}✓ ${prog>0?prog+'○ ':''}/ ${items.length}</span>
+    </div>
+    <div class="chk-grid">
+      ${items.map(item=>{
+        const st=p.checks[item.id]||'';
+        const note=p.notes[item.id]||'';
+        const meta=p.checksMeta?.[item.id]||{};
+        const assignee=meta.assignee||'';
+        const deadline=meta.deadline||'';
+        const overdue=deadline&&new Date(deadline)<new Date()&&st!=='done';
+        return`<div class="chk-row" id="chk_${item.id}" style="border-left:3px solid ${SEC_BG[sec]||'#1B5E20'}">
+          <div class="chk-dot${st?' '+st:''}" onclick="cycleChk('${item.id}')">${st==='done'?'<i class="ti ti-check"></i>':st==='progress'?'○':st==='na'?'－':''}</div>
+          <div style="flex:1;min-width:0" onclick="cycleChk('${item.id}')">
+            <div class="chk-label">${esc(item.label)}</div>
+            <div class="meta-row">
+              <input class="meta-inp" value="${esc(assignee)}" onclick="event.stopPropagation()" onchange="updateMeta('${item.id}','assignee',this.value)" placeholder="担当者" style="width:60px"/>
+              <input type="date" class="meta-inp" value="${esc(deadline)}" onclick="event.stopPropagation()" onchange="updateMeta('${item.id}','deadline',this.value)" oninput="updateMeta('${item.id}','deadline',this.value)" style="width:90px;color:${overdue?'#E24B4A':'#555'}"/>
+              ${overdue?'<span style="font-size:8px;color:#E24B4A;font-weight:700">期限切れ</span>':''}
+            </div>
+            ${note?`<div class="note-display"><i class="ti ti-alert-circle" style="flex-shrink:0;margin-top:1px"></i><span>${esc(note)}</span></div>`:''}
+          </div>
+          <button class="note-btn" onclick="event.stopPropagation();addNote('${item.id}')"><i class="ti ti-message-circle"></i></button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('')}`;
+};
+
+const cycleChk=id=>{
+  if(!curProj)return;
+  saveHistory();
+  const cur=curProj.checks[id]||'';
+  const next=cur===''?'progress':cur==='progress'?'done':cur==='done'?'na':'';
+  if(next==='')delete curProj.checks[id];else curProj.checks[id]=next;
+  const row=document.getElementById('chk_'+id);
+  if(row){
+    const dot=row.querySelector('.chk-dot');
+    if(dot){dot.className='chk-dot'+(next?' '+next:'');dot.innerHTML=next==='done'?'<i class="ti ti-check"></i>':next==='progress'?'○':next==='na'?'－':'';}
+  }
+  renderSidebar();autoSave();
+};
+
+const updateMeta=(id,field,value)=>{
+  if(!curProj)return;
+  saveHistory();
+  if(!curProj.checksMeta)curProj.checksMeta={};
+  if(!curProj.checksMeta[id])curProj.checksMeta[id]={};
+  curProj.checksMeta[id][field]=value;
+  autoSave();
+};
+
+const addNote=id=>{
+  const cur=curProj.notes[id]||'';
+  const note=prompt('メモを入力（赤字で表示されます）:',cur);
+  if(note!==null){
+    saveHistory();
+    if(note==='')delete curProj.notes[id];else curProj.notes[id]=note;
+    renderContent();autoSave();
+  }
+};
+
+const upd=(f,v)=>{if(curProj){saveHistory();curProj[f]=v;renderSidebar();autoSave();}};
+
+// ── PROJ CRUD ──
+const openNewProj=()=>showModal('新規案件を追加',`
+  <div class="form-row"><label>案件名 *</label><input id="np_name" placeholder="例: ○○邸新築工事"/></div>
+  <div class="form-row"><label>お施主様 氏名</label><input id="np_client" placeholder="山田 太郎"/></div>
+  <div class="form-row"><label>建設地</label><input id="np_addr" placeholder="住所"/></div>
+  <div class="form-row"><label>担当者</label><input id="np_tantou" placeholder="担当者名"/></div>
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button class="btn-sec" onclick="closeModal()">キャンセル</button>
+    <button class="btn-pri" onclick="createProj()">作成</button>
+  </div>`);
+
+const createProj=async()=>{
+  const name=document.getElementById('np_name').value.trim();
+  if(!name){alert('案件名を入力してください');return;}
+  const p={id:'b_'+Date.now(),name,client:document.getElementById('np_client').value,
+    client_kana:'',tel:'',address:document.getElementById('np_addr').value,
+    type:'木造2階',staff:'',tantou:document.getElementById('np_tantou').value,
+    start:'',tatekata:'',kanko:'',memo:'',
+    checks:{},notes:{},checksMeta:{},sort_order:projects.length,_saved:false};
+  projects.push(p);closeModal();selProj(p.id);
+  await saveProj();
+};
+
+const confirmDel=()=>{
+  if(!curProj)return;
+  showModal('案件を削除',`<p style="margin-bottom:16px;line-height:1.6">「<strong>${esc(curProj.name||'この案件')}</strong>」を削除しますか？<br><span style="font-size:11px;color:#B00020">この操作は元に戻せません。</span></p>
+  <div style="display:flex;gap:8px"><button class="btn-sec" onclick="closeModal()">キャンセル</button><button class="btn-danger" onclick="deleteProj()">削除する</button></div>`);
+};
+const deleteProj=async()=>{
+  if(!curProj)return;
+  try{if(curProj._saved)await dbDelete(curProj.id);}catch{}
+  projects=projects.filter(p=>p.id!==curProj.id);
+  curProj=null;
+  document.getElementById('pcTopbar').style.display='none';
+  document.getElementById('mobTabs').style.display='none';
+  document.getElementById('undoBar').style.display='none';
+  document.getElementById('content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:10px;color:#aaa"><i class="ti ti-pencil-ruler" style="font-size:48px;color:#1B5E20;opacity:0.4"></i><span>案件を選択するか新規追加してください</span></div>';
+  closeModal();renderSidebar();toast('削除しました');
+};
+
+// ── PROJ DRAG ──
+const onProjDS=(e,id)=>{_dragProjId=id;setTimeout(()=>{const el=document.getElementById('pi_'+id);if(el)el.style.opacity='0.4';},0);};
+const onProjDO=(e,id)=>{e.preventDefault();if(id===_dragProjId)return;const el=document.getElementById('pi_'+id);if(el)el.style.borderTop='2px solid rgba(255,255,255,0.6)';};
+const onProjDL=(e,id)=>{const el=document.getElementById('pi_'+id);if(el)el.style.borderTop='';};
+const onProjDrop=(e,id)=>{
+  e.preventDefault();if(!_dragProjId||_dragProjId===id)return;
+  const fi=projects.findIndex(p=>p.id===_dragProjId);const ti=projects.findIndex(p=>p.id===id);
+  if(fi<0||ti<0)return;
+  const[m]=projects.splice(fi,1);projects.splice(ti,0,m);
+  renderSidebar();
+  projects.forEach((p,i)=>{p.sort_order=i;dbPatch(p.id,{sort_order:i}).catch(()=>{});});
+  toast('並び順を変更しました');
+};
+const onProjDE=()=>{_dragProjId=null;document.querySelectorAll('.proj-item').forEach(el=>{el.style.opacity='';el.style.borderTop='';});};
+
+// ── MODAL / DRAWER ──
+const showModal=(title,body)=>{document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modalBg').classList.add('show');};
+const closeModal=()=>document.getElementById('modalBg').classList.remove('show');
+document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===document.getElementById('modalBg'))closeModal();});
+const openDrawer=()=>{document.getElementById('drawerBg').classList.add('show');document.getElementById('drawer').classList.add('open');document.body.style.overflow='hidden';};
+const closeDrawer=()=>{document.getElementById('drawerBg').classList.remove('show');document.getElementById('drawer').classList.remove('open');document.body.style.overflow='';};
+
+// ── INIT ──
+(async()=>{
+  await loadProjects();
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').style.opacity='1';
+  renderSidebar();
+})();
+</script>
+</body>
+</html>
